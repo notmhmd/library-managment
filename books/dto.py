@@ -15,3 +15,9 @@ class BorrowBook(BaseModel):
     book_id: int
     returned_at: Optional[datetime]
     status: str
+
+class SearchBook(BaseModel):
+    title: Optional[str] = None
+    author: Optional[str] = None
+    category: Optional[str] = None
+    isbn: Optional[str] = None

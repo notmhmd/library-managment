@@ -1,11 +1,11 @@
 from datetime import datetime
 from typing import Annotated
 
-from fastapi import Query, HTTPException
+from fastapi import Query, HTTPException, status
 from fastapi_cache import FastAPICache
 from sqlmodel import Session, select
 from common.persistance import SessionDep
-from .dto import CreateBook
+from .dto import CreateBook, SearchBook
 from .models import Book, BorrowHistory
 
 
@@ -29,7 +29,6 @@ async def update_book(session: SessionDep, update_data: CreateBook, book_id: int
     session.commit()
     session.refresh(book)
     await FastAPICache.get_backend().clear(f"fastapi-cache:gir :{book_id}")
-
     return book
 
 
@@ -50,14 +49,24 @@ def get_book(session: SessionDep, book_id: int):
     return None
 
 
-def get_books(session: SessionDep, offset: int = 0,limit: Annotated[int, Query(le=100)] = 100,):
-    books = session.exec(select(Book).offset(offset).limit(limit)).all()
-    return books
+def get_books(session: SessionDep, params: SearchBook, offset: int = 0,limit: Annotated[int, Query(le=100)] = 100):
+    query = select(Book)
+    if params.title:
+        query = query.where(Book.title.ilike(f"%{params.title}%"))
+    if params.author:
+        query = query.where(Book.author.ilike(f"%{params.author}%"))
+    if params.category:
+        query = query.where(Book.category.ilike(f"%{params.category}%"))
+    if params.isbn:
+        query = query.where(Book.isbn == params.isbn)
+    return session.exec(query).all()
 
 
 def borrow_book(session: SessionDep, user_id: int, book_id: int):
     book = session.exec(select(Book).where(Book.id == book_id)).first()
-    print(book.available_copies, "copies")
+    user_borrow = session.exec(select(BorrowHistory).where(BorrowHistory.user_id == user_id, BorrowHistory.status == "borrowed")).first()
+    if user_borrow:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User Already borrowed this book")
     if book and book.available_copies > 0:
         book.available_copies -= 1
         borrow_record = BorrowHistory(user_id=user_id, book_id=book_id, status="borrowed")
