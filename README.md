@@ -14,6 +14,7 @@ A simple FastAPI app with MemCached caching and rate limiting.
 ```bash
 git clone git@github.com:notmhmd/library-managment.git
 cd library-managment
+cp example.env .env
 ```
 
 ### **2️⃣ Run Docker Compose**
