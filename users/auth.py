@@ -33,7 +33,7 @@ class TokenData(BaseModel):
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl="token",
+    tokenUrl="users/login",
     scopes={"me": "Read information about the current user."},
 )
 
