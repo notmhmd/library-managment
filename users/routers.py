@@ -20,7 +20,8 @@ logger = logging.getLogger(__name__)
 def register_user(user: UserCreate, session: SessionDep):
     try:
         logger.info(f"Registering new user: {user.username}")
-        return repository.create_user(session, user)
+        new_user = repository.create_user(session, user)
+        return UserResponse.model_validate(dict(new_user))
     except Exception as e:
         logger.error(f"Error creating user {user.username}: {str(e)}", exc_info=True)
         raise HTTPException(
